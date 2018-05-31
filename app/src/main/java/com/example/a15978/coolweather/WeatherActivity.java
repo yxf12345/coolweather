@@ -230,4 +230,11 @@ public class WeatherActivity extends AppCompatActivity {
         startService( intent );
     }
 
+    @Override
+    public void onDestroy()
+    {
+        super.onDestroy();
+        ChooseAreaFragment.locate = true;
+    }
+
 }

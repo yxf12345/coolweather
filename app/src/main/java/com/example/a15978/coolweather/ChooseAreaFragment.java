@@ -1,9 +1,13 @@
 package com.example.a15978.coolweather;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.telecom.Call;
 import android.util.Log;
@@ -16,6 +20,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.SDKInitializer;
 import com.example.a15978.coolweather.db.City;
 import com.example.a15978.coolweather.db.County;
 import com.example.a15978.coolweather.db.GetName;
@@ -52,6 +61,8 @@ public class ChooseAreaFragment extends Fragment {
     private City selectedCity;
     private int currentLevel;
 
+    public static boolean locate = true;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -63,6 +74,154 @@ public class ChooseAreaFragment extends Fragment {
                 dataList);
         listView.setAdapter(adapter);
         return view;
+    }
+
+    public LocationClient mLocationClient;
+    private void locate()
+    {
+        initLocation();
+        mLocationClient.start();
+    }
+
+    @Override
+    public void onDestroy()
+    {
+        super.onDestroy();
+        if( mLocationClient != null )
+            this.mLocationClient.stop();
+    }
+    public class MyLocationListener implements BDLocationListener
+    {
+        @Override
+        public void onReceiveLocation( BDLocation location )
+        {
+            locate = false;
+            Log.d(TAG, location.toString() );
+            String province = location.getProvince();
+            String city = location.getCity();
+            String county = location.getDistrict();
+            if( province == null || city == null || county == null )
+            {
+                Log.d(TAG, province );
+                Log.d(TAG, city );
+                Log.d(TAG, county);
+                return;
+            }
+            province = province.split("省")[0].trim();
+            city = city.split( "市")[0].trim();
+            county = county.split( "区")[0].trim();
+            Log.d(TAG, "province is " + province );
+            Log.d(TAG, "city is " + city);
+            Log.d(TAG, "county is " + county );
+            for( Province p : provinceList )
+            {
+                Log.d(TAG, p.getName());
+                if( p.getName().equals( province.trim() ) )
+                {
+                    selectedProvince = p;
+                    queryCities();
+                    for( City c : cityList )
+                    {
+                        Log.d(TAG, c.getName().trim());
+                        if( city.equals( c.getName().trim() ) )
+                        {
+                            selectedCity = c;
+                            queryCounties();
+                            for( County county1 : countyList )
+                            {
+                                Log.d(TAG, county1.getName());
+                                if( county.equals( county1.getName().trim() ) )
+                                {
+                                    String weatherId = county1.getWeatherId();
+                                    Intent intent = new Intent( getActivity(), WeatherActivity.class );
+                                    intent.putExtra( "weather_id", weatherId );
+                                    startActivity( intent );
+                                    getActivity().finish();
+                                    return;
+                                }
+                            }
+                            for( County county1 : countyList )
+                            {
+                                if( city.equals( county1.getName().trim() ) )
+                                {
+                                    String weatherId = county1.getWeatherId();
+                                    Intent intent = new Intent( getActivity(), WeatherActivity.class );
+                                    intent.putExtra( "weather_id", weatherId );
+                                    startActivity( intent );
+                                    getActivity().finish();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+
+        }
+    }
+
+    private void initLocation()
+    {
+        SDKInitializer.initialize( getActivity().getApplicationContext() );
+        mLocationClient =new LocationClient( getActivity().getApplicationContext() );
+        mLocationClient.registerLocationListener( new MyLocationListener() );
+        LocationClientOption option = new LocationClientOption();
+        option.setLocationNotify( true );
+        option.setIsNeedAddress( true );
+        mLocationClient.setLocOption( option );
+        List<String> permissionList = new ArrayList<>();
+        if(ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED )
+        {
+            permissionList.add( Manifest.permission.ACCESS_FINE_LOCATION );
+        }
+        if(ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_PHONE_STATE) !=
+                PackageManager.PERMISSION_GRANTED )
+        {
+            permissionList.add( Manifest.permission.READ_PHONE_STATE);
+        }
+        if(ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED )
+        {
+            permissionList.add( Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if( !permissionList.isEmpty() )
+        {
+            String[] permissions = permissionList.toArray( new String[permissionList.size()]);
+            ActivityCompat.requestPermissions(getActivity(), permissions, 1 );
+        }
+        else
+        {
+            mLocationClient.start();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult( int requestCode, String[] permissions, int[] grantResults )
+    {
+        switch( requestCode )
+        {
+            case 1:
+                if( grantResults.length > 0 ) {
+                    for (int result : grantResults)
+                    {
+                        if( result != PackageManager.PERMISSION_GRANTED )
+                        {
+                            Toast.makeText(getActivity(), "拒绝的话将不能进行自动定位", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+                    mLocationClient.start();
+                }
+                else
+                {
+                    Toast.makeText(getActivity(), "unknown error happened", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
@@ -105,6 +264,16 @@ public class ChooseAreaFragment extends Fragment {
             }
         });
         queryProvinces();
+    }
+
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        if( locate )
+        {
+            locate();
+        }
     }
 
     private void queryProvinces() {

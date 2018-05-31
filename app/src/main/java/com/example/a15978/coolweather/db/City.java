@@ -6,7 +6,7 @@ import org.litepal.crud.DataSupport;
  * Created by 15978 on 2018/5/29.
  */
 
-public class City extends DataSupport
+public class City extends DataSupport implements GetName
 {
     private int id;
     private String cityName;
@@ -43,5 +43,9 @@ public class City extends DataSupport
 
     public void setProvinceId(int provinceId) {
         this.provinceId = provinceId;
+    }
+    public String getName()
+    {
+        return this.cityName;
     }
 }

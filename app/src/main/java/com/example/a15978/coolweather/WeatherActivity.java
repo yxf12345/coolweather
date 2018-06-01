@@ -92,7 +92,7 @@ public class WeatherActivity extends AppCompatActivity {
             loadBingPic();
         }
         String weatherString = prefs.getString( "weather",null );
-        if( weatherString != null )
+        /*if( weatherString != null )
         {
             Weather weather = Utility.handleWeatherResponse(weatherString);
             showWeatherInfo( weather );
@@ -104,6 +104,19 @@ public class WeatherActivity extends AppCompatActivity {
             mWeatherId = weatherId;
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather( weatherId);
+        }*/
+        if( getIntent().getStringExtra( "weather_id" ) != null )
+        {
+            String weatherId = getIntent().getStringExtra( "weather_id" );
+            mWeatherId = weatherId;
+            weatherLayout.setVisibility(View.INVISIBLE);
+            requestWeather( weatherId);
+        }
+        else if( weatherString != null )
+        {
+            Weather weather = Utility.handleWeatherResponse(weatherString);
+            showWeatherInfo( weather );
+            mWeatherId = weather.basic.weatherId;
         }
         swipeRefresh.setOnRefreshListener( () ->
         {

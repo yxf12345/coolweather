@@ -51,7 +51,7 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView sportText;
     private ImageView imageView;
     public SwipeRefreshLayout swipeRefresh;
-    private String mWeatherId;
+    public String mWeatherId;
     public DrawerLayout drawerLayout;
     private Button navButton;
     @Override

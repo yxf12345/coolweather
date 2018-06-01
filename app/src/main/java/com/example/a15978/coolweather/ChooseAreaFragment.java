@@ -80,7 +80,6 @@ public class ChooseAreaFragment extends Fragment {
     private void locate()
     {
         initLocation();
-        mLocationClient.start();
     }
 
     @Override
@@ -116,21 +115,21 @@ public class ChooseAreaFragment extends Fragment {
             for( Province p : provinceList )
             {
                 Log.d(TAG, p.getName());
-                if( p.getName().equals( province.trim() ) )
+                if( p.getName().trim().equals( province.trim() ) )
                 {
                     selectedProvince = p;
                     queryCities();
                     for( City c : cityList )
                     {
                         Log.d(TAG, c.getName().trim());
-                        if( city.equals( c.getName().trim() ) )
+                        if( city.trim().equals( c.getName().trim() ) )
                         {
                             selectedCity = c;
                             queryCounties();
                             for( County county1 : countyList )
                             {
                                 Log.d(TAG, county1.getName());
-                                if( county.equals( county1.getName().trim() ) )
+                                if( county.trim().equals( county1.getName().trim() ) )
                                 {
                                     String weatherId = county1.getWeatherId();
                                     Intent intent = new Intent( getActivity(), WeatherActivity.class );
@@ -142,7 +141,7 @@ public class ChooseAreaFragment extends Fragment {
                             }
                             for( County county1 : countyList )
                             {
-                                if( city.equals( county1.getName().trim() ) )
+                                if( city.trim().equals( county1.getName().trim() ) )
                                 {
                                     String weatherId = county1.getWeatherId();
                                     Intent intent = new Intent( getActivity(), WeatherActivity.class );
@@ -251,6 +250,7 @@ public class ChooseAreaFragment extends Fragment {
                     WeatherActivity activity = (WeatherActivity)getActivity();
                     activity.drawerLayout.closeDrawers();
                     activity.swipeRefresh.setRefreshing( true );
+                    activity.mWeatherId = weatherId;
                     activity.requestWeather( weatherId );
                 }
             }
@@ -264,12 +264,6 @@ public class ChooseAreaFragment extends Fragment {
             }
         });
         queryProvinces();
-    }
-
-    @Override
-    public void onResume()
-    {
-        super.onResume();
         if( locate )
         {
             locate();
